@@ -3,6 +3,12 @@
     <v-app id="inspire">
       <v-container grid-list-md text-xs-center>
         <v-layout row wrap>
+          <v-flex right xs6>
+            {{ countrySelected.name }}
+          </v-flex>
+          <v-flex right xs6>
+            <!-- <img :src="country_flag_image_src" width="50"/> -->
+          </v-flex>
           <v-flex xs12 sm6 md3  v-for="(top_headline, index) in top_headlines.articles" :key="index">
             <v-card dark color="secondary" style="height: 450px; padding-bottom: 15px;">
               <v-card-media :src=top_headline.urlToImage height="180px" v-if="top_headline.urlToImage" style="min-height: 180px;"></v-card-media>
@@ -43,7 +49,21 @@ export default {
       top_headlines: [],
       streamData: null,
       isConnected: false,
-      country: 'ng'
+      country: 'ng',
+      country_flag_image_src: null
+    }
+  },
+  watch: {
+    countrySelected (newValue, oldValue) {
+      this.country = newValue.index
+      // const name = newValue.name.replace(/ /g, '-').toLowerCase()
+      // this.country_flag_image_src = `https://firebasestorage.googleapis.com/v0/b/nkatar-c8bcd.appspot.com/o/countries%2F${name}.gif?alt=media&token=7cf45428-d83c-4f5b-8fad-606d276ac8ea`
+      this.fetchFromNetwork()
+    }
+  },
+  computed: {
+    countrySelected () {
+      return this.$store.getters.getCountry
     }
   },
   methods: {
@@ -72,7 +92,7 @@ export default {
         console.log(data)
         this.top_headlines = data
         console.log(this.top_headlines)
-        this.deleteNews (data)
+        this.deleteNews(data)
       }, this).onPatch(patch => {
         // update the data with the provided patch// update the data with the provided patch
         console.log('received patch %o', patch)
@@ -112,7 +132,7 @@ export default {
     },
     // open a connection to the server for live updates
     fetchFromNetwork () {
-      fetch('https://newsapi.org/v2/top-headlines?country=us&apiKey=8f9773109c594f5cad47ace0c1970333')
+      fetch(`https://newsapi.org/v2/top-headlines?country=${this.country}&apiKey=8f9773109c594f5cad47ace0c1970333`)
         .then((response) => {
           console.log(response)
           if (!response) {
@@ -140,47 +160,10 @@ export default {
             })
           })
         })
-      // console.log('Web worker...')
-      // worker.postMessage(this.country)
-      // worker.onmessage = (e) => {
-      //   console.log(e)
-      //   this.top_headlines = e.data
-      //   console.log('Message received from worker')
-      // }
-      // setInterval(() => {
-      //   fetch('https://newsapi.org/v2/top-headlines?country=us&apiKey=8f9773109c594f5cad47ace0c1970333')
-      //     .then((response) => {
-      //       console.log(response)
-      //       if (!response) {
-      //         this.fetchCachedNews()
-      //         return
-      //       }
-      //       return response.json()
-      //     })
-      //     .then((data) => {
-      //       this.top_headlines = data.articles
-      //       console.log(data)
-      //       idb.indexDb().then((db) => {
-      //         const transaction = db.transaction('nkatar-top-headlines', 'readwrite')
-      //         const store = transaction.objectStore('nkatar-top-headlines')
-      //         data.articles.forEach((article) => {
-      //           store.put(article)
-      //         })
-      //         // limit store to 20 items
-      //         store.index('by_date').openCursor(null, 'prev').then(function (cursor) {
-      //           return cursor.advance(20)
-      //         }).then(function deleteRest (cursor) {
-      //           if (!cursor) return
-      //           cursor.delete()
-      //           return cursor.continue().then(deleteRest)
-      //         })
-      //       })
-      //     })
-      // }, 10000)
     }
   },
   mounted () {
-    this.fetchByStreaming()
+    // this.fetchByStreaming()
   }
 }
 </script>

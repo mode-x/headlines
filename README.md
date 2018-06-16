@@ -3,10 +3,10 @@
 > News in realtime
 
 ## Features
-* Users should be able to view top headlines based on country (filters) 
-* Users should be able to search through a list of sources. 
-* Users should be able to select sources and view headlines based on sources (filters). 
-* Users should be able to click links to the original articles and be redirected to them on a new tab
+* Users should be able to view top headlines based on country (filters).
+* Users should be able to select sources and view headlines based on sources (filters).
+* Users should be able to search through a list of sources.
+* Users should be able to click links to the original articles and be redirected to them on a new tab.
 
 ## Build Setup
 

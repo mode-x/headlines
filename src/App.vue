@@ -12,28 +12,39 @@
           <v-btn icon>
             <v-icon>more_vert</v-icon>
           </v-btn>
-          <v-tabs
-            slot="extension"
-            icons-and-text
-            centered
-            color="cyan"
-            slider-color="orange"
-          >
-            <v-tab to="/top_headlines">
-              Top Headlines
-              <v-icon>spa</v-icon>
-            </v-tab>
-            <v-tab to="/global">
-              Global
-              <v-icon>language</v-icon>
-            </v-tab>
-            <v-tab to="/local">
-              Local
-              <v-icon>place</v-icon>
-            </v-tab>
-          </v-tabs>
         </v-toolbar>
         <v-navigation-drawer v-model="drawer" temporary absolute>
+          <template>
+            <v-container fluid>
+              <v-layout row wrap>
+                <v-flex xs12 mt-5>
+                  Countries
+                  <v-select
+                    :items="countries"
+                    v-model="country"
+                    label="Select a country"
+                    single-line
+                    auto
+                    prepend-icon="map"
+                    hide-details
+                    @change="drawer = !drawer"
+                  ></v-select>
+                </v-flex>
+                <v-flex xs12 mt-5>
+                  Sources
+                  <v-select
+                    :items="sources"
+                    v-model="source"
+                    label="Select a source"
+                    single-line
+                    auto
+                    prepend-icon="map"
+                    hide-details
+                  ></v-select>
+                </v-flex>
+              </v-layout>
+            </v-container>
+          </template>
           <v-list class="pa-1">
           </v-list>
           <v-list class="pt-0" dense>
@@ -46,10 +57,16 @@
 </template>
 
 <script>
+const apiCountries = require('./assets/js/api_countries.js')
+
 export default {
   name: 'app',
   data () {
     return {
+      country: null,
+      countries: [],
+      source: null,
+      sources: [],
       drawer: null,
       items: [
         { title: 'Home', icon: 'dashboard' },
@@ -57,7 +74,21 @@ export default {
       ]
     }
   },
+  watch: {
+    country (index, o) {
+      for (const item of apiCountries.list()) {
+        if (item.index === index) {
+          this.$store.commit('setCountry', {index: index, name: item.name})
+        }
+      }
+    }
+  },
   methods: {
+    loadCountries () {
+      for (const item of apiCountries.list()) {
+        this.countries.push({text: item.name, value: item.index})
+      }
+    },
     registerSW () {
       if (!navigator.serviceWorker) return
 
@@ -84,6 +115,7 @@ export default {
     }
   },
   mounted () {
+    this.loadCountries()
     this.registerSW()
   }
 }
