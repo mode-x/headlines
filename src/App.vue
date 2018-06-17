@@ -1,59 +1,69 @@
 <template>
-  <div id="app">
-    <v-app id="inspire">
-      <div>
-        <v-toolbar color="cyan" dark tabs fixed>
-          <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-          <v-toolbar-title>Nkatar</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-btn icon>
-            <v-icon>search</v-icon>
-          </v-btn>
-          <v-btn icon>
-            <v-icon>more_vert</v-icon>
-          </v-btn>
-        </v-toolbar>
-        <v-navigation-drawer v-model="drawer" temporary absolute>
-          <template>
-            <v-container fluid>
-              <v-layout row wrap>
-                <v-flex xs12 mt-5>
-                  Countries
-                  <v-select
-                    :items="countries"
-                    v-model="country"
-                    label="Select a country"
-                    single-line
-                    auto
-                    prepend-icon="map"
-                    hide-details
-                    @change="drawer = !drawer"
-                  ></v-select>
-                </v-flex>
-                <v-flex xs12 mt-5>
-                  Sources
-                  <v-select
-                    :items="sources"
-                    v-model="source"
-                    label="Select a source"
-                    single-line
-                    auto
-                    prepend-icon="map"
-                    hide-details
-                  ></v-select>
-                </v-flex>
-              </v-layout>
-            </v-container>
-          </template>
-          <v-list class="pa-1">
-          </v-list>
-          <v-list class="pt-0" dense>
-          </v-list>
-        </v-navigation-drawer>
-      </div>
-      <router-view></router-view>
-    </v-app>
-  </div>
+  <v-app id="app">
+    <v-navigation-drawer v-model="drawer" temporary app>
+      <template>
+        <v-container fluid>
+          <v-layout row wrap>
+            <v-flex xs12 mt-5>
+              Countries
+              <v-select
+                :items="countries"
+                v-model="country"
+                label="Select a country"
+                single-line
+                auto
+                prepend-icon="map"
+                hide-details
+                @change="drawer = !drawer"
+              ></v-select>
+            </v-flex>
+            <v-flex xs12 mt-5>
+              Sources
+              <v-select
+                :items="sources"
+                v-model="source"
+                label="Select a source"
+                single-line
+                auto
+                prepend-icon="map"
+                hide-details
+              ></v-select>
+            </v-flex>
+          </v-layout>
+        </v-container>
+      </template>
+      <v-list class="pa-1">
+      </v-list>
+      <v-list class="pt-0" dense>
+      </v-list>
+    </v-navigation-drawer>
+    <v-toolbar color="blue" dark fixed app>
+      <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
+      <v-toolbar-title>Nkatar</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <span>{{ defaultCountry.name }}</span>
+      <img :src="country_flag" width="50"/>
+      <v-btn icon>
+        <v-icon>more_vert</v-icon>
+      </v-btn>
+    </v-toolbar>
+    <v-content>
+      <v-container fluid fill-height>
+        <v-layout
+          justify-center
+          align-center
+        >
+          <v-alert v-model="alert" type="success" dismissible>
+            {{ alert_message }}
+          </v-alert>
+          <router-view></router-view>
+        </v-layout>
+      </v-container>
+    </v-content>
+    <v-footer color="black" app>
+      <span class="white--text">&copy; 2017</span>
+    </v-footer>
+  </v-app>
 </template>
 
 <script>
@@ -63,27 +73,52 @@ export default {
   name: 'app',
   data () {
     return {
+      country_flag: '',
       country: null,
       countries: [],
       source: null,
       sources: [],
       drawer: null,
-      items: [
-        { title: 'Home', icon: 'dashboard' },
-        { title: 'About', icon: 'question_answer' }
-      ]
+      alert: false,
+      alert_message: ''
     }
   },
   watch: {
     country (index, o) {
       for (const item of apiCountries.list()) {
         if (item.index === index) {
+          // const name = newValue.name.replace(/ /g, '-').toLowerCase()
+          // this.country_flag_image_src = `https://firebasestorage.googleapis.com/v0/b/nkatar-c8bcd.appspot.com/o/countries%2F${name}.gif?alt=media&token=7cf45428-d83c-4f5b-8fad-606d276ac8ea`
           this.$store.commit('setCountry', {index: index, name: item.name})
         }
       }
     }
   },
+  computed: {
+    defaultCountry () {
+      return this.$store.getters.getCountry
+    }
+  },
   methods: {
+    getLocation () {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          console.log(position)
+          fetch(`http://ws.geonames.org/findNearbyPlaceNameJSON?lat=${position.coords.latitude}&lng=${position.coords.longitude}&username=nasefx`)
+            .then((response) => {
+              if (!response) return
+              return response.json()
+            })
+            .then((data) => {
+              this.$store.commit('setCountry', {index: data.geonames[0].countryCode.toLowerCase(), name: data.geonames[0].countryName})
+            })
+        })
+      } else {
+        this.alert = true
+        this.alert_message = 'Geolocation is not supported by this browser.'
+        console.log(this.alert_message)
+      }
+    },
     loadCountries () {
       for (const item of apiCountries.list()) {
         this.countries.push({text: item.name, value: item.index})
@@ -117,6 +152,7 @@ export default {
   mounted () {
     this.loadCountries()
     this.registerSW()
+    this.getLocation()
   }
 }
 </script>
@@ -133,27 +169,4 @@ body {
   color: #2c3e50;
 }
 
-main {
-  text-align: center;
-  margin-top: 40px;
-}
-
-header {
-  margin: 0;
-  height: 56px;
-  padding: 0 16px 0 24px;
-  background-color: #35495E;
-  color: #ffffff;
-}
-
-header span {
-  display: block;
-  position: relative;
-  font-size: 20px;
-  line-height: 1;
-  letter-spacing: .02em;
-  font-weight: 400;
-  box-sizing: border-box;
-  padding-top: 16px;
-}
 </style>

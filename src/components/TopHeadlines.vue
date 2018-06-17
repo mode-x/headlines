@@ -1,34 +1,26 @@
 <template>
-  <div id="home">
-    <v-app id="inspire">
-      <v-container grid-list-md text-xs-center>
-        <v-layout row wrap>
-          <v-flex right xs6>
-            {{ countrySelected.name }}
-          </v-flex>
-          <v-flex right xs6>
-            <!-- <img :src="country_flag_image_src" width="50"/> -->
-          </v-flex>
-          <v-flex xs12 sm6 md3  v-for="(top_headline, index) in top_headlines.articles" :key="index">
-            <v-card dark color="secondary" style="height: 450px; padding-bottom: 15px;">
-              <v-card-media :src=top_headline.urlToImage height="180px" v-if="top_headline.urlToImage" style="min-height: 180px;"></v-card-media>
-              <v-card-media src='./static/img/nkatar_logo.png' height="180px" v-else style="min-height: 180px;"></v-card-media>
-              <v-card-title primary-title class="card-title">
-                {{ top_headline.title }}
-              </v-card-title>
-              <v-card-text class="card-text truncate">
-                <!-- {{ top_headline.description }} -->
-              </v-card-text>
-              <v-card-actions class="d-flex align-items-end">
-                <v-btn flat color="orange">Share</v-btn>
-                <v-btn flat color="orange" :href=top_headline.url>Read</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-flex>
-        </v-layout>
-      </v-container>
-    </v-app>
-  </div>
+  <v-app id="home">
+    <v-container grid-list-md text-xs-center>
+      <v-layout row wrap>
+        <v-flex xs12 sm6 md3  v-for="(top_headline, index) in top_headlines" :key="index">
+          <v-card dark color="secondary" style="height: 450px; padding-bottom: 15px;">
+            <v-card-media :src=top_headline.urlToImage height="180px" v-if="top_headline.urlToImage" style="min-height: 180px;"></v-card-media>
+            <v-card-media src='https://firebasestorage.googleapis.com/v0/b/nkatar-c8bcd.appspot.com/o/nkatar_logo.png?alt=media&token=34ba0584-0662-48c6-866f-3e0665be06ba' height="180px" v-else style="min-height: 180px;"></v-card-media>
+            <v-card-title primary-title class="card-title">
+              {{ top_headline.title }}
+            </v-card-title>
+            <v-card-text class="card-text truncate">
+              <!-- {{ top_headline.description }} -->
+            </v-card-text>
+            <v-card-actions class="d-flex align-items-end">
+              <v-btn flat color="orange">Share</v-btn>
+              <v-btn flat color="orange" :href=top_headline.url>Read</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-flex>
+      </v-layout>
+    </v-container>
+  </v-app>
 </template>
 
 <script>
@@ -49,15 +41,12 @@ export default {
       top_headlines: [],
       streamData: null,
       isConnected: false,
-      country: 'ng',
-      country_flag_image_src: null
+      country: 'ng'
     }
   },
   watch: {
     countrySelected (newValue, oldValue) {
       this.country = newValue.index
-      // const name = newValue.name.replace(/ /g, '-').toLowerCase()
-      // this.country_flag_image_src = `https://firebasestorage.googleapis.com/v0/b/nkatar-c8bcd.appspot.com/o/countries%2F${name}.gif?alt=media&token=7cf45428-d83c-4f5b-8fad-606d276ac8ea`
       this.fetchFromNetwork()
     }
   },
@@ -134,7 +123,6 @@ export default {
     fetchFromNetwork () {
       fetch(`https://newsapi.org/v2/top-headlines?country=${this.country}&apiKey=8f9773109c594f5cad47ace0c1970333`)
         .then((response) => {
-          console.log(response)
           if (!response) {
             this.fetchCachedNews()
             return
@@ -143,7 +131,7 @@ export default {
         })
         .then((data) => {
           this.top_headlines = data.articles
-          console.log(data)
+          // console.log(data)
           idb.indexDb().then((db) => {
             const transaction = db.transaction('nkatar-top-headlines', 'readwrite')
             const store = transaction.objectStore('nkatar-top-headlines')
@@ -163,16 +151,12 @@ export default {
     }
   },
   mounted () {
-    // this.fetchByStreaming()
+    this.fetchFromNetwork()
   }
 }
 </script>
 
 <style>
-#home {
-  margin-top: 120px;
-}
-
 #card-holder {
   display: -webkit-flex; /* Safari */
   display: flex;
