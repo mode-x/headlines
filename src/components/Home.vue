@@ -139,7 +139,6 @@ export default {
               // Put in IndexDB
               store.put(article)
               // Put in Cache
-              
             })
             // limit store to 20 items
             store.index('by_date').openCursor(null, 'prev').then(function (cursor) {
