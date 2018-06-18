@@ -205,15 +205,14 @@ self.addEventListener('activate', function (event) {
 })
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
+  event.respondWith (
     caches.match(event.request).then(function (response) {
       return response || fetch(event.request)
         .then((response) => {
-          if (response.status === 403) {
-            console.log('Forbidden')
+          if (response === undefined) {
+          } else if (response.status === 403) {
             return fetch('/static/nkatar_logo.png')
           } else if (response.status === 404) {
-            console.log('Not Found')
             return fetch('/static/nkatar_logo.png')
           }
           return response
@@ -222,5 +221,5 @@ self.addEventListener('fetch', (event) => {
           console.log(error)
         })
     })
-  )
+  ) 
 })
