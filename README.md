@@ -7,6 +7,10 @@
 * Users should be able to select sources and view headlines based on sources (filters).
 * Users should be able to search through a list of sources.
 * Users should be able to click links to the original articles and be redirected to them on a new tab.
+* Allow for unobtrusive app updates
+* Get the user onto the latest version
+* Continually update cache of news
+* Cache images of news
 
 ## Build Setup
 

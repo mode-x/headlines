@@ -41,8 +41,8 @@
       <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
       <v-toolbar-title>Nkatar</v-toolbar-title>
       <v-spacer></v-spacer>
-      <span>{{ defaultCountry.name }}</span>
-      <img :src="country_flag" width="50"/>
+      <span class="pr-2">{{ defaultCountry.name }}</span>
+      <img :src=country_flag width="25"/>
       <v-btn icon>
         <v-icon>more_vert</v-icon>
       </v-btn>
@@ -87,8 +87,8 @@ export default {
     country (index, o) {
       for (const item of apiCountries.list()) {
         if (item.index === index) {
-          // const name = newValue.name.replace(/ /g, '-').toLowerCase()
-          // this.country_flag_image_src = `https://firebasestorage.googleapis.com/v0/b/nkatar-c8bcd.appspot.com/o/countries%2F${name}.gif?alt=media&token=7cf45428-d83c-4f5b-8fad-606d276ac8ea`
+          const name = item.name.replace(/ /g, '_').toLowerCase()
+          this.country_flag = `./static/flags/${name}.gif`
           this.$store.commit('setCountry', {index: index, name: item.name})
         }
       }
@@ -103,7 +103,6 @@ export default {
     getLocation () {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((position) => {
-          console.log(position)
           fetch(`http://ws.geonames.org/findNearbyPlaceNameJSON?lat=${position.coords.latitude}&lng=${position.coords.longitude}&username=nasefx`)
             .then((response) => {
               if (!response) return
@@ -116,7 +115,6 @@ export default {
       } else {
         this.alert = true
         this.alert_message = 'Geolocation is not supported by this browser.'
-        console.log(this.alert_message)
       }
     },
     loadCountries () {
