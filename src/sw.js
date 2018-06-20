@@ -205,7 +205,7 @@ self.addEventListener('activate', function (event) {
 })
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith (
+  event.respondWith(
     caches.match(event.request).then(function (response) {
       return response || fetch(event.request)
         .then((response) => {
@@ -221,5 +221,13 @@ self.addEventListener('fetch', (event) => {
           console.log(error)
         })
     })
-  ) 
+  )
+})
+
+self.addEventListener('push', (event) => {
+  const title = 'Get Started With Workbox'
+  const options = {
+    body: event.data.text()
+  }
+  event.waitUntil(self.registration.showNotification(title, options))
 })

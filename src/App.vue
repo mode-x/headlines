@@ -49,18 +49,19 @@
     </v-toolbar>
     <v-content>
       <v-container fluid fill-height>
-        <v-layout
-          justify-center
-          align-center
-        >
-          <v-alert v-model="alert" type="success" dismissible>
-            {{ alert_message }}
-          </v-alert>
-          <router-view></router-view>
+        <v-layout column>
+          <v-flex>
+            <v-alert v-model="alert" type="success" dismissible>
+              {{ alert_message }}
+            </v-alert>
+          </v-flex>
+          <v-flex>
+            <router-view></router-view>
+          </v-flex>
         </v-layout>
       </v-container>
     </v-content>
-    <v-footer color="black" app>
+    <v-footer color="blue" app>
       <span class="white--text">&copy; 2017</span>
     </v-footer>
   </v-app>
@@ -101,15 +102,19 @@ export default {
   },
   methods: {
     getLocation () {
-      if (navigator.geolocation) {
+      this.$store.commit('setCountry', {index: 'ng', name: 'Nigeria'})
+      this.country_flag = './static/flags/nigeria.gif'
+      if (navigator.onLine && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((position) => {
-          fetch(`http://ws.geonames.org/findNearbyPlaceNameJSON?lat=${position.coords.latitude}&lng=${position.coords.longitude}&username=nasefx`)
+          fetch(`https://secure.geonames.org/findNearbyPlaceNameJSON?lat=${position.coords.latitude}&lng=${position.coords.longitude}&username=nasefx`)
             .then((response) => {
               if (!response) return
               return response.json()
             })
             .then((data) => {
-              this.$store.commit('setCountry', {index: data.geonames[0].countryCode.toLowerCase(), name: data.geonames[0].countryName})
+              const name = data.geonames[0].countryName
+              this.country_flag = `./static/flags/${name.replace(/ /g, '_').toLowerCase()}.gif`
+              this.$store.commit('setCountry', {index: data.geonames[0].countryCode.toLowerCase(), name: name})
             })
         })
       } else {
@@ -126,7 +131,7 @@ export default {
       if (!navigator.serviceWorker) return
 
       navigator.serviceWorker.register('/sw.js').then(function (reg) {
-        console.log('SW registered from top headlines: ', reg)
+        // console.log('SW registered from Home: ', reg)
         if (!navigator.serviceWorker.controller) {
           return
         }

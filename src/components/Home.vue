@@ -3,14 +3,14 @@
     <v-container grid-list-md text-xs-center>
       <v-layout row wrap>
         <v-flex xs12 sm6 md3  v-for="(top_headline, index) in top_headlines" :key="index">
-          <v-card dark color="secondary" style="height: 450px; padding-bottom: 15px;">
-            <v-card-media :src=top_headline.urlToImage height="180px" v-if="top_headline.urlToImage" style="min-height: 180px;"></v-card-media>
-            <v-card-media src='https://firebasestorage.googleapis.com/v0/b/nkatar-c8bcd.appspot.com/o/nkatar_logo.png?alt=media&token=34ba0584-0662-48c6-866f-3e0665be06ba' height="180px" v-else style="min-height: 180px;"></v-card-media>
+          <v-card dark color="secondary" style="height: 465px;">
+            <v-card-media :src=top_headline.urlToImage height="180px" v-if="top_headline.urlToImage" style="min-height: 180px;" onerror="this.src='./static/flags/nigeria.gif'"></v-card-media>
+            <v-card-media src='static/nkatar_logo.png' height="180px" v-else style="min-height: 180px;"></v-card-media>
             <v-card-title primary-title class="card-title">
               {{ top_headline.title }}
             </v-card-title>
-            <v-card-text class="card-text truncate">
-              <!-- {{ top_headline.description }} -->
+            <v-card-text class="card-text">
+              {{ top_headline.source.name }} - {{ formatedDate(top_headline.publishedAt) }}
             </v-card-text>
             <v-card-actions class="d-flex align-items-end">
               <v-btn flat color="orange">Share</v-btn>
@@ -27,6 +27,7 @@
 import { StreamDataIo } from 'streamdataio-js-sdk'
 import * as jsonpatch from 'fast-json-patch'
 
+const moment = require('moment')
 const idb = require('../assets/js/idb.js')
 // const worker = new Worker('~/src/assets/js/worker.js')
 
@@ -47,6 +48,7 @@ export default {
   watch: {
     countrySelected (newValue, oldValue) {
       this.country = newValue.index
+      this.top_headlines = []
       this.fetchFromNetwork()
     }
   },
@@ -56,6 +58,9 @@ export default {
     }
   },
   methods: {
+    formatedDate (value) {
+      return moment(value).calendar()
+    },
     deleteNews (data) {
       idb.indexDb().then((db) => {
         const transaction = db.transaction('nkatar-top-headlines', 'readwrite')
@@ -114,42 +119,57 @@ export default {
           .objectStore('nkatar-top-headlines').index('by_date')
 
         index.getAll().then((articles) => {
-          this.top_headlines = {articles: articles.reverse()}
+          this.top_headlines = articles.reverse()
         })
       })
       // this.fetchFromNetwork()
     },
     fetchFromNetwork () {
-      fetch(`https://newsapi.org/v2/top-headlines?country=${this.country}&apiKey=8f9773109c594f5cad47ace0c1970333`)
-        .then((response) => {
-          if (!response) {
-            console.log(response)
-            this.fetchCachedNews()
-            return
-          }
-          return response.json()
-        })
-        .then((data) => {
-          this.top_headlines = data.articles
-          // console.log(data)
-          idb.indexDb().then((db) => {
-            const transaction = db.transaction('nkatar-top-headlines', 'readwrite')
-            const store = transaction.objectStore('nkatar-top-headlines')
-            data.articles.forEach((article) => {
-              // Put in IndexDB
-              store.put(article)
-              // Put in Cache
+      if (navigator.onLine) {
+        fetch(`https://newsapi.org/v2/top-headlines?country=${this.country}&apiKey=8f9773109c594f5cad47ace0c1970333`)
+          .then((response) => {
+            return response.json()
+          })
+          .then((data) => {
+            this.top_headlines = data.articles
+            // console.log(data)
+            caches.delete('nkatar-news-image').then(() => {
+              console.log('Image cache deleted')
             })
-            // limit store to 20 items
-            store.index('by_date').openCursor(null, 'prev').then(function (cursor) {
-              return cursor.advance(20)
-            }).then(function deleteRest (cursor) {
-              if (!cursor) return
-              cursor.delete()
-              return cursor.continue().then(deleteRest)
+            idb.indexDb().then((db) => {
+              const transaction = db.transaction('nkatar-top-headlines', 'readwrite')
+              const store = transaction.objectStore('nkatar-top-headlines')
+              data.articles.forEach((article) => {
+                // Put in IndexDB
+                store.put(article)
+                // Put in Cache
+                const url = article.urlToImage
+                fetch(url, {mode: 'no-cors'})
+                  .then((response) => {
+                    // if (!response.ok) {
+                    //   throw Error("Can't fetch image")
+                    // }
+                    caches.open('nkatar-news-image').then((cache) => {
+                      cache.put(url, response)
+                    })
+                  })
+                  .catch((error) => {
+                    console.log(error)
+                  })
+              })
+              // limit store to 20 items
+              store.index('by_date').openCursor(null, 'prev').then(function (cursor) {
+                return cursor.advance(20)
+              }).then(function deleteRest (cursor) {
+                if (!cursor) return
+                cursor.delete()
+                return cursor.continue().then(deleteRest)
+              })
             })
           })
-        })
+      } else {
+        this.fetchCachedNews()
+      }
     }
   },
   mounted () {
@@ -176,7 +196,7 @@ export default {
 }
 
 .card-text {
-  font-size: 0.9em;
+  font-size: 0.8em;
   text-align: left;
 }
 

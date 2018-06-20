@@ -7,6 +7,8 @@
 * Users should be able to select sources and view headlines based on sources (filters).
 * Users should be able to search through a list of sources.
 * Users should be able to click links to the original articles and be redirected to them on a new tab.
+* There should be push notifications when there are new headlines.
+* Users should be able to create lists (e.g.favourites) and group articles in these lists.
 * Allow for unobtrusive app updates
 * Get the user onto the latest version
 * Continually update cache of news
