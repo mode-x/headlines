@@ -90,22 +90,6 @@ module.exports = {
   plugins: [
     new workboxPlugin.InjectManifest({
       swSrc: './src/sw.js'
-    }),
-    new WebpackPwaManifest({
-      name: 'Nkatar',
-      short_name: 'Nkatar',
-      description: 'News in realtime',
-      background_color: '#ffffff',
-      icons: [
-        {
-          src: path.resolve('src/assets/nkatar_logo.png'),
-          sizes: [96, 128, 192, 256, 384, 512] // multiple sizes
-        },
-        {
-          src: path.resolve('src/assets/nkatar_logo.png'),
-          size: '1024x1024' // you can also use the specifications pattern
-        }
-      ]
     })
   ]
 }
