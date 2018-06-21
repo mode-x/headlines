@@ -233,7 +233,7 @@ export default {
             if (Notification.permission === 'denied') {
               console.warn('Permission for notifications was denied')
             } else {
-              console.error('Unable to subscribe to push', e)
+              console.error('Unable to subscribe to push notification', e)
             }
           })
         })
