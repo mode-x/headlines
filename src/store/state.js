@@ -2,5 +2,7 @@ export const state = {
   country: {index: 'ng', name: 'Nigeria'},
   source: {},
   favorites: [],
-  fetch_from_network: null
+  show_favorites: false,
+  fetch_from_network: null,
+  endpoint_url: ''
 }

@@ -225,9 +225,26 @@ self.addEventListener('fetch', (event) => {
 })
 
 self.addEventListener('push', (event) => {
-  const title = 'Get Started With Workbox'
-  const options = {
-    body: event.data.text()
+  var body
+  console.log(event.data)
+  if (event.data) {
+    body = event.data.text()
   }
-  event.waitUntil(self.registration.showNotification(title, options))
+
+  var options = {
+    body: body,
+    icon: '/static/nkatar_logo.png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1
+    },
+    actions: [
+      {action: 'open', title: 'Read',
+        icon: 'images/checkmark.png'}
+    ]
+  };
+  event.waitUntil(
+    self.registration.showNotification('Push Notification', options)
+  )
 })

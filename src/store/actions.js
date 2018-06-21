@@ -8,7 +8,13 @@ export const actions = {
   favorites ({commit}, payload) {
     commit('setFavorites', payload)
   },
+  showFavorites ({commit}, payload) {
+    commit('setShowFavorites', payload)
+  },
   fetchFromNetwork ({commit}, payload) {
     commit('setFetchFromNetwork', payload)
+  },
+  endPointUrl ({commit}, payload) {
+    commit('setEndPointUrl', payload)
   }
 }

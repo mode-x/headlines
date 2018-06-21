@@ -40,7 +40,7 @@
       <v-dialog v-model="dialog" max-width="500px">
         <v-card>
           <v-card-title style="background-color: #2196F3;">
-            Favorite
+            Add Favorite
           </v-card-title>
           <v-card-text>
             Add to favorites?
@@ -52,6 +52,14 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-snackbar
+        :timeout=6000
+        :top=true
+        :right=true
+        v-model="snackbar">
+        Successfully added
+        <v-btn flat color="orange" @click.native="snackbar = false">Close</v-btn>
+      </v-snackbar>
     </v-container>
   </v-app>
 </template>
@@ -62,6 +70,7 @@ import * as jsonpatch from 'fast-json-patch'
 
 const moment = require('moment')
 const idb = require('../assets/js/idb.js')
+const tokens = require('../assets/js/tokens.js')
 
 export default {
   name: 'home',
@@ -69,8 +78,7 @@ export default {
     return {
       title: 'Top Headlines',
       model: 'tab-1',
-      url: 'http://newsapi.org/v2/top-headlinesx',
-      token: 'YzFmODhlOGYtMzAyZi00YjNiLWE5NjctNmUyZjg0YTlkMzYz',
+      url: 'http://newsapi.org/v2/top-headlines',
       top_headlines: [],
       streamData: null,
       isConnected: false,
@@ -78,11 +86,13 @@ export default {
       interval: {},
       value: 10,
       favorite_article: null,
-      dialog: false
+      dialog: false,
+      snackbar: false
     }
   },
   beforeDestroy () {
     clearInterval(this.interval)
+    this.closeStreaming()
   },
   watch: {
     country (newValue, oldValue) {
@@ -133,6 +143,7 @@ export default {
           this.$store.commit('setFavorites', fav)
         })
         this.dialog = false
+        this.snackbar = true
       })
     },
     formatedDate (value) {
@@ -143,7 +154,18 @@ export default {
         const transaction = db.transaction('nkatar-top-headlines', 'readwrite')
         const store = transaction.objectStore('nkatar-top-headlines')
         data.articles.forEach((article) => {
+          const url = article.urlToImage
           store.put(article)
+          // Put in Cache
+          fetch(url, {mode: 'no-cors'})
+            .then((response) => {
+              caches.open('nkatar-news-image').then((cache) => {
+                cache.put(url, response)
+              })
+            })
+            .catch((error) => {
+              console.log(error)
+            })
         })
         // limit store to 20 items
         store.index('by_date').openCursor(null, 'prev').then(function (cursor) {
@@ -155,20 +177,56 @@ export default {
         })
       })
     },
+    sendPushNotification (message) {
+      const url = this.$store.getters.getEndPointUrl
+      fetch(url, {
+        mode: 'no-cors',
+        method: 'POST',
+        body: message,
+        headers: {
+          'TTL': '60',
+          'Content-Length': '0',
+          'Authorization': 'key=AAAA67jKjYQ:APA91bG0xZL0Z23b6YZyyhEPvhVuaJhwOrKQgq85ppL7nlo3gqHfKph1S_tIz5YPudtel-yxIdZYM32vM76W0EGVttrWnOHOVLJFAe9FsvhX1p-mOrZUtu8XakYzPkllJMFz_1K0tKtz'
+        }
+      }).then(res => res.json())
+        .catch(error => console.error('Error:', error))
+        .then(response => console.log('Success:', response))
+    },
+    pushNotification (message) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification('Nkatar', {
+            body: message,
+            icon: '/static/nkatar_logo.png',
+            tag: 'id1',
+            renotify: true,
+            vibrate: [100, 50, 100],
+            data: {
+              dateOfArrival: Date.now(),
+              primaryKey: 1
+            },
+            actions: [
+              {action: 'open', title: 'Read'}
+            ]
+          })
+        })
+      }
+    },
     fetchByStreaming () {
-      this.streamData = StreamDataIo.createEventSource(this.url, this.token, [])
+      this.streamData = StreamDataIo.createEventSource(this.url, tokens.streamDataIoToken(), [])
       this.streamData.onData(data => {
         // initialize your data with the initial snapshot
         console.log('Received data')
-        console.log(data)
-        this.top_headlines = data
-        console.log(this.top_headlines)
-        this.deleteNews(data)
+        // console.log(data)
       }, this).onPatch(patch => {
         // update the data with the provided patch// update the data with the provided patch
-        console.log('received patch %o', patch)
+        // console.log('received patch %o', patch)
+        this.top_headlines = {articles: this.top_headlines}
         jsonpatch.applyPatch(this.top_headlines, patch)
-        console.log(this.top_headlines)
+        this.deleteNews(this.top_headlines)
+        this.top_headlines = this.top_headlines.articles
+        // console.log(this.top_headlines)
+        this.pushNotification('New headlines')
       }, this).onError(error => {
         // do whatever you need in case of error
         console.log('error: %o', error)
@@ -200,15 +258,15 @@ export default {
           this.loading = false
         })
       })
-      // this.fetchFromNetwork()
     },
     fetchFromNetwork () {
       if (navigator.onLine) {
         let newsUrl
+        const token = tokens.newsApiToken()
         if (this.source.index) {
-          newsUrl = `https://newsapi.org/v2/top-headlines?sources=${this.source.index}&apiKey=8f9773109c594f5cad47ace0c1970333`
+          newsUrl = `https://newsapi.org/v2/top-headlines?sources=${this.source.index}&apiKey=${token}`
         } else {
-          newsUrl = `https://newsapi.org/v2/top-headlines?country=${this.country.index}&apiKey=8f9773109c594f5cad47ace0c1970333`
+          newsUrl = `https://newsapi.org/v2/top-headlines?country=${this.country.index}&apiKey=${token}`
         }
         fetch(newsUrl)
           .then((response) => {
@@ -256,6 +314,8 @@ export default {
                 cursor.delete()
                 return cursor.continue().then(deleteRest)
               })
+              // Streaming
+              this.fetchByStreaming()
             })
               .then(() => {
                 this.loading = false
@@ -269,6 +329,7 @@ export default {
     }
   },
   mounted () {
+    // this.sendPushNotification('Post message')
     this.fetchFromNetwork()
     this.interval = setInterval(() => {
       if (this.value === 100) {

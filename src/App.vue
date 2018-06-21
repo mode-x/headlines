@@ -31,7 +31,7 @@
             <v-flex xs12 mt-5>
               <v-chip color="primary" text-color="white" style="width: 100%;">
                 {{ fetchFavorites.length }} Favorite(s)
-                <v-icon color="red" right align-end>favorite</v-icon>
+                <v-icon color="red" right @click.stop="openFavorites()" style="cursor: pointer;">favorite</v-icon>
               </v-chip>
             </v-flex>
           </v-layout>
@@ -49,9 +49,9 @@
       <template v-if="by_sources">
         <span class="pr-2">{{ `Source: ${displaySource(selectedSource)}` }}</span>
       </template>
-      <!-- <v-btn icon>
-        <v-icon>more_vert</v-icon>
-      </v-btn> -->
+      <v-btn icon v-if="showFavorites" @click.stop="home()">
+        <v-icon>home</v-icon>
+      </v-btn>
     </v-toolbar>
     <v-content>
       <v-container fluid fill-height>
@@ -70,6 +70,21 @@
     <v-footer color="blue" app>
       <span class="white--text">&copy; 2017</span>
     </v-footer>
+    <v-dialog v-model="dialog" max-width="500px">
+      <v-card>
+        <v-card-title style="background-color: #2196F3;">
+          Push Notification
+        </v-card-title>
+        <v-card-text>
+          Would you like to be subscribed for Push Notifications?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue" flat @click.stop="dialog=false">Cancel</v-btn>
+          <v-btn color="orange" flat @click.stop="subscribeUser()">Ok</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -78,6 +93,7 @@ const apiCountries = require('./assets/js/api_countries.js')
 const apiSources = require('./assets/js/api_sources.js')
 
 const idb = require('./assets/js/idb.js')
+const tokens = require('./assets/js/tokens.js')
 
 export default {
   name: 'app',
@@ -92,7 +108,8 @@ export default {
       by_sources: false,
       drawer: null,
       alert: false,
-      alert_message: ''
+      alert_message: '',
+      dialog: false
     }
   },
   watch: {
@@ -131,9 +148,23 @@ export default {
     },
     fetchFavorites () {
       return this.$store.getters.getFavorites
+    },
+    showFavorites () {
+      return this.$store.getters.getShowFavorites
     }
   },
   methods: {
+    home () {
+      this.by_countries = true
+      this.$router.replace('/')
+      this.$store.commit('setShowFavorites', false)
+    },
+    openFavorites () {
+      this.by_countries = false
+      this.by_sources = false
+      this.$store.commit('setShowFavorites', true)
+      this.$router.push('/favorites')
+    },
     favorites () {
       idb.indexDb().then((db) => {
         const transaction = db.transaction('nkatar-favorites', 'readwrite')
@@ -162,7 +193,7 @@ export default {
       if (navigator.onLine) {
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition((position) => {
-            fetch(`https://secure.geonames.org/findNearbyPlaceNameJSON?lat=${position.coords.latitude}&lng=${position.coords.longitude}&username=nasefx`)
+            fetch(`https://secure.geonames.org/findNearbyPlaceNameJSON?lat=${position.coords.latitude}&lng=${position.coords.longitude}&username=${tokens.geoNamesUserName()}`)
               .then((response) => {
                 if (!response) return
                 return response.json()
@@ -189,10 +220,29 @@ export default {
         this.countries.push({text: item.name, value: item.index})
       }
     },
+    subscribeUser () {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.pushManager.subscribe({
+            userVisibleOnly: true
+          }).then((sub) => {
+            // console.log('Endpoint URL: ', sub.endpoint)
+            this.$store.commit('setEndPointUrl', sub.endpoint)
+            this.dialog = false
+          }).catch((e) => {
+            if (Notification.permission === 'denied') {
+              console.warn('Permission for notifications was denied')
+            } else {
+              console.error('Unable to subscribe to push', e)
+            }
+          })
+        })
+      }
+    },
     registerSW () {
       if (!navigator.serviceWorker) return
 
-      navigator.serviceWorker.register('/sw.js').then(function (reg) {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
         // console.log('SW registered from Home: ', reg)
         if (!navigator.serviceWorker.controller) {
           return
@@ -208,8 +258,19 @@ export default {
           // return
         }
 
-        reg.addEventListener('updatefound', function () {
+        reg.addEventListener('updatefound', () => {
           // indexController._trackInstalling(reg.installing)
+        })
+
+        reg.pushManager.getSubscription().then((sub) => {
+          if (sub === null) {
+            // Update UI to ask user to register for Push
+            console.log('Not subscribed to push service!')
+            this.dialog = true
+          } else {
+            // We have a subscription, update the database
+            console.log('Subscription object: ', sub)
+          }
         })
       })
     }
@@ -220,6 +281,9 @@ export default {
     this.loadSources()
     this.registerSW()
     this.getLocation()
+    Notification.requestPermission(function (status) {
+      console.log('Notification permission status:', status)
+    })
   }
 }
 </script>

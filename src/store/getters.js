@@ -8,7 +8,13 @@ export const getters = {
   getFavorites (state) {
     return state.favorites
   },
+  getShowFavorites (state) {
+    return state.show_favorites
+  },
   getfetchFromNetwork (state) {
     return state.fetch_from_network
+  },
+  getEndPointUrl (state) {
+    return state.endpoint_url
   }
 }
