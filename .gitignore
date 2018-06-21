@@ -7,7 +7,7 @@ yarn-error.log*
 /test/unit/coverage
 /test/e2e/reports
 selenium-debug.log
-/src/assets/js/token.js
+/src/assets/js/tokens.js
 
 # Editor directories and files
 .idea
