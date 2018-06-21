@@ -5,6 +5,9 @@ export const actions = {
   source ({commit}, payload) {
     commit('setSource', payload)
   },
+  favorites ({commit}, payload) {
+    commit('setFavorites', payload)
+  },
   fetchFromNetwork ({commit}, payload) {
     commit('setFetchFromNetwork', payload)
   }

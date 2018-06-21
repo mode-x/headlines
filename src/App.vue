@@ -30,7 +30,7 @@
             </v-flex>
             <v-flex xs12 mt-5>
               <v-chip color="primary" text-color="white" style="width: 100%;">
-                {{ favs.length }} Favorite(s)
+                {{ fetchFavorites.length }} Favorite(s)
                 <v-icon color="red" right align-end>favorite</v-icon>
               </v-chip>
             </v-flex>
@@ -92,8 +92,7 @@ export default {
       by_sources: false,
       drawer: null,
       alert: false,
-      alert_message: '',
-      favs: []
+      alert_message: ''
     }
   },
   watch: {
@@ -129,6 +128,9 @@ export default {
     },
     selectedSource () {
       return this.$store.getters.getSource
+    },
+    fetchFavorites () {
+      return this.$store.getters.getFavorites
     }
   },
   methods: {
@@ -138,7 +140,7 @@ export default {
         const store = transaction.objectStore('nkatar-favorites')
         return store.getAll()
       }).then((fav) => {
-        this.favs = fav
+        this.$store.commit('setFavorites', fav)
       })
     },
     displayCountry (value) {

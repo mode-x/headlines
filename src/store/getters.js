@@ -5,6 +5,9 @@ export const getters = {
   getSource (state) {
     return state.source
   },
+  getFavorites (state) {
+    return state.favorites
+  },
   getfetchFromNetwork (state) {
     return state.fetch_from_network
   }

@@ -47,8 +47,8 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" flat @click.stop="dialog=false">Ok</v-btn>
-            <v-btn color="accent" flat @click.stop="saveFavorite()">Ok</v-btn>
+            <v-btn color="blue" flat @click.stop="dialog=false">Cancel</v-btn>
+            <v-btn color="orange" flat @click.stop="saveFavorite()">Ok</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -125,6 +125,13 @@ export default {
           .catch((error) => {
             console.log(error)
           })
+        idb.indexDb().then((db) => {
+          const transaction = db.transaction('nkatar-favorites', 'readwrite')
+          const store = transaction.objectStore('nkatar-favorites')
+          return store.getAll()
+        }).then((fav) => {
+          this.$store.commit('setFavorites', fav)
+        })
         this.dialog = false
       })
     },
