@@ -269,7 +269,7 @@ export default {
             this.dialog = true
           } else {
             // We have a subscription, update the database
-            console.log('Subscription object: ', sub)
+            this.$store.commit('setEndPointUrl', sub.endpoint)
           }
         })
       })
