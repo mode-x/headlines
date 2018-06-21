@@ -1,3 +1,5 @@
 export const state = {
-  country: {}
+  country: {index: 'ng', name: 'Nigeria'},
+  source: {},
+  fetch_from_network: null
 }

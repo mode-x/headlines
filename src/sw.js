@@ -1,4 +1,4 @@
-import workbox from 'workbox' // fake
+import workbox from 'fake_workbox' // fake
 
 workbox.skipWaiting()
 
