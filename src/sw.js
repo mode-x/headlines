@@ -1,4 +1,5 @@
 import workbox from 'fake_workbox' // fake
+import clients from 'fake_clients' // fake
 
 workbox.skipWaiting()
 
@@ -240,11 +241,29 @@ self.addEventListener('push', (event) => {
       primaryKey: 1
     },
     actions: [
-      {action: 'open', title: 'Read',
-        icon: 'images/checkmark.png'}
+      {action: 'close', title: 'Read', icon: 'images/checkmark.png'}
     ]
-  };
+  }
   event.waitUntil(
     self.registration.showNotification('Push Notification', options)
   )
+})
+
+self.addEventListener('notificationclose', (event) => {
+  const notification = event.notification
+  const primaryKey = notification.data.primaryKey
+  console.log('Closed notification: ' + primaryKey)
+})
+
+self.addEventListener('notificationclick', (event) => {
+  const notification = event.notification
+  // var primaryKey = notification.data.primaryKey
+  const action = event.action
+
+  if (action === 'close') {
+    notification.close()
+  } else {
+    clients.openWindow('https://nkatar-c8bcd.firebaseapp.com/#/')
+    notification.close()
+  }
 })

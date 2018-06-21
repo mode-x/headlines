@@ -311,13 +311,13 @@ export default {
                 cursor.delete()
                 return cursor.continue().then(deleteRest)
               })
-              // Streaming
-              this.fetchByStreaming()
             })
               .then(() => {
                 this.loading = false
                 clearInterval(this.interval)
               })
+            // Streaming
+            this.fetchByStreaming()
           })
       } else {
         this.fetchCachedNews()

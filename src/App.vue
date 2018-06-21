@@ -221,6 +221,7 @@ export default {
       }
     },
     subscribeUser () {
+      this.dialog = false
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then((reg) => {
           reg.pushManager.subscribe({
@@ -228,7 +229,6 @@ export default {
           }).then((sub) => {
             // console.log('Endpoint URL: ', sub.endpoint)
             this.$store.commit('setEndPointUrl', sub.endpoint)
-            this.dialog = false
           }).catch((e) => {
             if (Notification.permission === 'denied') {
               console.warn('Permission for notifications was denied')
@@ -281,7 +281,7 @@ export default {
     this.loadSources()
     this.registerSW()
     this.getLocation()
-    Notification.requestPermission(function (status) {
+    Notification.requestPermission((status) => {
       console.log('Notification permission status:', status)
     })
   }
