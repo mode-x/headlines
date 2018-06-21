@@ -204,10 +204,7 @@ export default {
             data: {
               dateOfArrival: Date.now(),
               primaryKey: 1
-            },
-            actions: [
-              {action: 'open', title: 'Read'}
-            ]
+            }
           })
         })
       }
