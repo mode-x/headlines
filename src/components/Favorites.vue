@@ -2,7 +2,44 @@
   <v-app id="favorites">
     <v-container grid-list-md text-xs-center>
       <v-layout row wrap>
-        <v-flex xs12 sm6 md3  v-for="(favorite, index) in favorites" :key="index">
+        <v-flex xs12 sm12 md6  v-for="(favorite, index) in favorites" :key="index">
+          <v-layout row wrap class="secondary mr-1 mb-1" style="height: inherit;">
+            <v-flex xs12 sm6 style="margin: 0px;">
+              <img :src=favorite.urlToImage width="100%" v-if="favorite.urlToImage" style="max-height: 180px;" onerror="this.src='./static/nkatar_logo.png'" alt="news_image"/>
+              <img src='static/nkatar_logo.png' width="100%" v-else style="max-height: 180px;" alt="default_image"/>
+            </v-flex>
+            <v-flex xs12 sm6>
+              <v-layout column>
+                <v-flex xs6 class="card-title">
+                  <div class="text-holder">
+                    {{ favorite.title }}
+                  </div>
+                </v-flex>
+                <v-flex xs6 class="card-text">
+                  {{ favorite.source.name }}
+                </v-flex>
+                <v-flex xs6 class="card-text">
+                  {{ formatedDate(favorite.publishedAt) }}
+                </v-flex>
+                <v-flex xs6 class="action-text mt-1">
+                  <v-layout row>
+                    <v-flex xs6 class="action-text text-xs-center" style="cursor: pointer;" @click.stop="initializeFavorite(favorite)">
+                      <v-icon color="red" size="24">delete</v-icon>
+                      Delete
+                    </v-flex>
+                    <v-flex xs6 class="action-text text-xs-center">
+                      <a :href=favorite.url target="blank">
+                        <v-icon color="blue" dark size="24">laptop_chromebook</v-icon>
+                      </a>
+                      Read
+                    </v-flex>
+                  </v-layout>
+                </v-flex>
+              </v-layout>
+            </v-flex>
+          </v-layout>
+        </v-flex>
+        <!-- <v-flex xs12 sm6 md3  v-for="(favorite, index) in favorites" :key="index">
           <v-card dark color="secondary" style="height: 465px;">
             <v-card-media :src=favorite.urlToImage height="180px" v-if="favorite.urlToImage" style="min-height: 180px;" onerror="this.src='./static/flags/nigeria.gif'">
             </v-card-media>
@@ -24,11 +61,11 @@
               </v-btn>
             </v-card-actions>
           </v-card>
-        </v-flex>
+        </v-flex> -->
       </v-layout>
       <v-dialog v-model="dialog" max-width="500px">
         <v-card>
-          <v-card-title style="background-color: #2196F3;">
+          <v-card-title class="white--text" style="background-color: #2196F3;">
             Delete Favorite
           </v-card-title>
           <v-card-text>
@@ -67,6 +104,20 @@ export default {
       dialog: false,
       snackbar: false
     }
+  },
+  beforeRouteEnter (to, from, next) {
+    next(vm => {
+      if (!vm.by_countries) {
+        // vm.$router.replace('/')
+      }
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    next()
+    alert('beforeRouteUpdate')
+  },
+  beforeRouteLeave (to, from, next) {
+    next()
   },
   methods: {
     initializeFavorite (article) {
@@ -128,7 +179,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 #card-holder {
   display: -webkit-flex; /* Safari */
   display: flex;
@@ -140,14 +191,30 @@ export default {
 }
 
 .card-title {
-  font-size: 1.4em;
+  font-size: 1em;
   text-align: left;
-  height: 180px;
+  align-items: flex-start;
+  color: black;
 }
 
 .card-text {
-  font-size: 0.9em;
+  font-size: 0.85em;
   text-align: left;
+  height: 20px;
+}
+
+.action-text {
+  font-size: 0.85em;
+  text-align: left;
+  height: 40px;
+}
+
+.text-holder {
+  font-size: 1em;
+  text-align: left;
+  align-items: flex-start;
+  color: black;
+  height: 100px;
 }
 
 .truncate {

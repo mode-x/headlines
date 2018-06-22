@@ -9,8 +9,15 @@ import {store} from './store'
 
 import 'vuetify/dist/vuetify.min.css'
 import 'material-design-icons-iconfont/dist/material-design-icons.css'
+import colors from 'vuetify/es5/util/colors'
 
-Vue.use(Vuetify)
+Vue.use(Vuetify, {
+  theme: {
+    primary: colors.blue.darken3,
+    secondary: colors.grey.lighten2,
+    accent: colors.orange.base
+  }
+})
 
 Vue.config.productionTip = false
 

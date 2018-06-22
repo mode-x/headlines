@@ -29,10 +29,15 @@
               ></v-select>
             </v-flex>
             <v-flex xs12 mt-5>
-              <v-chip color="primary" text-color="white" style="width: 100%;">
-                {{ fetchFavorites.length }} Favorite(s)
-                <v-icon color="red" right @click.stop="openFavorites()" style="cursor: pointer;">favorite</v-icon>
-              </v-chip>
+              <v-layout row wrap>
+                <v-flex xs10 class="pa-2" style="background-color: #2196F3; cursor: pointer;" @click.stop="openFavorites()">
+                  {{ fetchFavorites.length }} Favorite(s)
+                </v-flex>
+                <v-flex xs2 class="pa-2" style="background-color: #2196F3; cursor: pointer;" @click.stop="openFavorites()">
+                  <v-icon color="red">favorite</v-icon>
+                </v-flex>
+                <v-flex xs12>Click to view your favorite news</v-flex>
+              </v-layout>
             </v-flex>
           </v-layout>
         </v-container>
@@ -42,9 +47,9 @@
       <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
       <v-toolbar-title style="margin-left: 3px;">Nkatar</v-toolbar-title>
       <v-spacer></v-spacer>
-      <template v-if="by_countries">
+      <template v-if="by_countries && !showFavorites">
         <span class="pr-2">{{ `Country: ${displayCountry(selectedCountry)}` }}</span>
-        <img :src=country_flag width="25"/>
+        <img :src=country_flag width="25" alt="flag"/>
       </template>
       <template v-if="by_sources">
         <span class="pr-2">{{ `Source: ${displaySource(selectedSource)}` }}</span>
@@ -72,7 +77,7 @@
     </v-footer>
     <v-dialog v-model="dialog" max-width="500px">
       <v-card>
-        <v-card-title style="background-color: #2196F3;">
+        <v-card-title style="background-color: #2196F3; color: white;">
           Push Notification
         </v-card-title>
         <v-card-text>
@@ -82,6 +87,20 @@
           <v-spacer></v-spacer>
           <v-btn color="blue" flat @click.stop="dialog=false">Cancel</v-btn>
           <v-btn color="orange" flat @click.stop="subscribeUser()">Ok</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="dialog1" max-width="500px">
+      <v-card>
+        <v-card-title style="background-color: #2196F3; color: white;">
+          <span class="text-white">Favorites</span>
+        </v-card-title>
+        <v-card-text>
+          You have not added any item to this collection.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue" flat @click.stop="dialog1=false">Cancel</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -109,7 +128,8 @@ export default {
       drawer: null,
       alert: false,
       alert_message: '',
-      dialog: false
+      dialog: false,
+      dialog1: false
     }
   },
   watch: {
@@ -160,6 +180,10 @@ export default {
       this.$store.commit('setShowFavorites', false)
     },
     openFavorites () {
+      if (this.fetchFavorites.length === 0) {
+        this.dialog1 = true
+        return
+      }
       this.by_countries = false
       this.by_sources = false
       this.$store.commit('setShowFavorites', true)
@@ -295,7 +319,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 body {
   margin: 0;
 }
@@ -307,8 +331,8 @@ body {
   color: #2c3e50;
 }
 
-.chip__content {
-  width: 98%!important;
+.icon-text {
+  text-align: right;
 }
 
 </style>

@@ -13,7 +13,44 @@
             {{ value }}
           </v-progress-circular>
         </v-flex>
-        <v-flex xs12 sm6 md3  v-for="(top_headline, index) in top_headlines" :key="index" v-else>
+        <v-flex xs12 sm12 md6 v-for="(top_headline, index) in top_headlines" :key="index" v-else>
+          <v-layout row wrap class="secondary mr-1 mb-1" style="height: inherit;">
+            <v-flex xs12 sm6 style="margin: 0px;">
+              <img :src=top_headline.urlToImage width="100%" v-if="top_headline.urlToImage" style="max-height: 180px;" onerror="this.src='./static/nkatar_logo.png'" alt="news_image"/>
+              <img src='static/nkatar_logo.png' width="100%" v-else style="max-height: 180px;" alt="default_image"/>
+            </v-flex>
+            <v-flex xs12 sm6>
+              <v-layout column>
+                <v-flex xs6 class="card-title">
+                  <div class="text-holder">
+                    {{ top_headline.title }}
+                  </div>
+                </v-flex>
+                <v-flex xs6 class="card-text">
+                  {{ top_headline.source.name }}
+                </v-flex>
+                <v-flex xs6 class="card-text">
+                  {{ formatedDate(top_headline.publishedAt) }}
+                </v-flex>
+                <v-flex xs6 class="action-text mt-1">
+                  <v-layout row>
+                    <v-flex xs6 class="action-text text-xs-center" style="cursor: pointer;" @click.stop="initializeFavorite(top_headline)">
+                      <v-icon color="red" size="24">favorite</v-icon>
+                      Favorite
+                    </v-flex>
+                    <v-flex xs6 class="action-text text-xs-center">
+                      <a :href=top_headline.url target="blank">
+                        <v-icon color="blue" dark size="24">laptop_chromebook</v-icon>
+                      </a>
+                      Read
+                    </v-flex>
+                  </v-layout>
+                </v-flex>
+              </v-layout>
+            </v-flex>
+          </v-layout>
+        </v-flex>
+        <!-- <v-flex xs12 sm6 md3 v-for="(top_headline, index) in top_headlines" :key="index" v-else>
           <v-card dark color="secondary" style="height: 465px;">
             <v-card-media :src=top_headline.urlToImage height="180px" v-if="top_headline.urlToImage" style="min-height: 180px;" onerror="this.src='./static/flags/nigeria.gif'" alt="news_image">
             </v-card-media>
@@ -35,11 +72,11 @@
               </v-btn>
             </v-card-actions>
           </v-card>
-        </v-flex>
+        </v-flex> -->
       </v-layout>
       <v-dialog v-model="dialog" max-width="500px">
         <v-card>
-          <v-card-title style="background-color: #2196F3;">
+          <v-card-title class="white--text" style="background-color: #2196F3;">
             Add Favorite
           </v-card-title>
           <v-card-text>
@@ -87,12 +124,14 @@ export default {
       value: 10,
       favorite_article: null,
       dialog: false,
-      snackbar: false
+      snackbar: false,
+      web_worker: null
     }
   },
   beforeDestroy () {
     clearInterval(this.interval)
     this.closeStreaming()
+    this.web_worker.terminate()
   },
   watch: {
     country (newValue, oldValue) {
@@ -250,9 +289,9 @@ export default {
     },
     fetchFromNetwork () {
       if (window.Worker) {
-        const myWorker = new Worker('/static/worker.js')
-        myWorker.postMessage([this.source.index, this.country.index, tokens.newsApiToken()])
-        myWorker.onmessage = (event) => {
+        this.web_worker = new Worker('/static/worker.js')
+        this.web_worker.postMessage([this.source.index, this.country.index, tokens.newsApiToken()])
+        this.web_worker.onmessage = (event) => {
           this.top_headlines = event.data.articles
           caches.delete('nkatar-news-image').then(() => {
             // console.log('Image cache deleted')
@@ -300,7 +339,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 #card-holder {
   display: -webkit-flex; /* Safari */
   display: flex;
@@ -312,15 +351,30 @@ export default {
 }
 
 .card-title {
-  font-size: 1.4em;
+  font-size: 1em;
   text-align: left;
-  height: 180px;
-  align-self: flex-end;
+  align-items: flex-start;
+  color: black;
 }
 
 .card-text {
-  font-size: 0.9em;
+  font-size: 0.85em;
   text-align: left;
+  height: 20px;
+}
+
+.action-text {
+  font-size: 0.85em;
+  text-align: left;
+  height: 40px;
+}
+
+.text-holder {
+  font-size: 1em;
+  text-align: left;
+  align-items: flex-start;
+  color: black;
+  height: 100px;
 }
 
 .truncate {
