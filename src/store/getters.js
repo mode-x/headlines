@@ -11,7 +11,7 @@ export const getters = {
   getShowFavorites (state) {
     return state.show_favorites
   },
-  getfetchFromNetwork (state) {
+  getFetchFromNetwork (state) {
     return state.fetch_from_network
   },
   getEndPointUrl (state) {

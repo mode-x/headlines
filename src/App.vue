@@ -40,7 +40,7 @@
     </v-navigation-drawer>
     <v-toolbar color="blue" dark fixed app>
       <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-      <v-toolbar-title>Nkatar</v-toolbar-title>
+      <v-toolbar-title style="margin-left: 3px;">Nkatar</v-toolbar-title>
       <v-spacer></v-spacer>
       <template v-if="by_countries">
         <span class="pr-2">{{ `Country: ${displayCountry(selectedCountry)}` }}</span>
@@ -113,13 +113,13 @@ export default {
     }
   },
   watch: {
-    country (index, o) {
+    country (index, oldIndex) {
+      this.$store.commit('setFetchFromNetwork', oldIndex === null || oldIndex !== null)
       for (const item of apiCountries.list()) {
         if (item.index === index) {
           this.source = null
           this.by_countries = true
           this.by_sources = false
-          this.$store.commit('setFetchFromNetwork', true)
           const name = item.name.replace(/ /g, '_').toLowerCase()
           this.country_flag = `./static/flags/${name}.gif`
           this.$store.commit('setCountry', {index: index, name: item.name})
@@ -133,7 +133,7 @@ export default {
           this.country = null
           this.by_countries = false
           this.by_sources = true
-          this.$store.commit('setFetchFromNetwork', true)
+          this.$store.commit('setFetchFromNetwork', false)
           this.$store.commit('setSource', {index: index, source: item.source})
         }
       }
@@ -187,9 +187,6 @@ export default {
       return value.source
     },
     getLocation () {
-      this.$store.commit('setFetchFromNetwork', false)
-      this.$store.commit('setCountry', {index: 'ng', name: 'Nigeria'})
-      this.country_flag = './static/flags/nigeria.gif'
       if (navigator.onLine) {
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition((position) => {
@@ -199,12 +196,22 @@ export default {
                 return response.json()
               })
               .then((data) => {
-                const name = data.geonames[0].countryName
-                this.country_flag = `./static/flags/${name.replace(/ /g, '_').toLowerCase()}.gif`
-                this.$store.commit('setCountry', {index: data.geonames[0].countryCode.toLowerCase(), name: name})
+                const name = data.geonames[0].countryName.replace(/ /g, '_').toLowerCase()
+                const index = data.geonames[0].countryCode.toLowerCase()
+                for (const item of apiCountries.list()) {
+                  if (item.index === index) {
+                    this.country_flag = `./static/flags/${name}.gif`
+                    this.$store.commit('setCountry', {index: index, name: name})
+                  } else {
+                    this.$store.commit('setCountry', {index: 'ng', name: 'Nigeria'})
+                    this.country_flag = './static/flags/nigeria.gif'
+                  }
+                }
               })
           })
         } else {
+          this.$store.commit('setCountry', {index: 'ng', name: 'Nigeria'})
+          this.country_flag = './static/flags/nigeria.gif'
           this.alert = true
           this.alert_message = 'Geolocation is not supported by this browser.'
         }

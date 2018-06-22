@@ -15,9 +15,9 @@
         </v-flex>
         <v-flex xs12 sm6 md3  v-for="(top_headline, index) in top_headlines" :key="index" v-else>
           <v-card dark color="secondary" style="height: 465px;">
-            <v-card-media :src=top_headline.urlToImage height="180px" v-if="top_headline.urlToImage" style="min-height: 180px;" onerror="this.src='./static/flags/nigeria.gif'">
+            <v-card-media :src=top_headline.urlToImage height="180px" v-if="top_headline.urlToImage" style="min-height: 180px;" onerror="this.src='./static/flags/nigeria.gif'" alt="news_image">
             </v-card-media>
-            <v-card-media src='static/nkatar_logo.png' height="180px" v-else style="min-height: 180px;"></v-card-media>
+            <v-card-media src='static/nkatar_logo.png' height="180px" v-else style="min-height: 180px;" alt="default_image"></v-card-media>
             <v-card-title primary-title class="card-title">
               {{ top_headline.title }}
             </v-card-title>
@@ -96,12 +96,12 @@ export default {
   },
   watch: {
     country (newValue, oldValue) {
-      if (this.$store.getters.getfetchFromNetwork) {
+      if (this.$store.getters.getFetchFromNetwork) {
         this.fetchFromNetwork()
       }
     },
     source (newValue, oldValue) {
-      if (this.$store.getters.getfetchFromNetwork) {
+      if (newValue.index) {
         this.fetchFromNetwork()
       }
     }
@@ -177,21 +177,6 @@ export default {
         })
       })
     },
-    sendPushNotification (message) {
-      const url = this.$store.getters.getEndPointUrl
-      fetch(url, {
-        mode: 'no-cors',
-        method: 'POST',
-        body: message,
-        headers: {
-          'TTL': '60',
-          'Content-Length': '0',
-          'Authorization': 'key=AAAA67jKjYQ:APA91bG0xZL0Z23b6YZyyhEPvhVuaJhwOrKQgq85ppL7nlo3gqHfKph1S_tIz5YPudtel-yxIdZYM32vM76W0EGVttrWnOHOVLJFAe9FsvhX1p-mOrZUtu8XakYzPkllJMFz_1K0tKtz'
-        }
-      }).then(res => res.json())
-        .catch(error => console.error('Error:', error))
-        .then(response => console.log('Success:', response))
-    },
     pushNotification (message) {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then((reg) => {
@@ -213,7 +198,7 @@ export default {
       this.streamData = StreamDataIo.createEventSource(this.url, tokens.streamDataIoToken(), [])
       this.streamData.onData(data => {
         // initialize your data with the initial snapshot
-        console.log('Received data')
+        // console.log('Received data')
         // console.log(data)
       }, this).onPatch(patch => {
         // update the data with the provided patch// update the data with the provided patch
@@ -233,7 +218,7 @@ export default {
       }, this).onOpen(function () {
         this.isConnected = true
         // you can also add custom behavior when the stream is opened
-        console.log('open')
+        // console.log('open')
       }, this)
       this.streamData.open()
     },
@@ -244,6 +229,9 @@ export default {
       this.isConnected = false
     },
     fetchCachedNews () {
+      this.loading = false
+      clearInterval(this.interval)
+      // Cache
       idb.indexDb().then((db) => {
         if (this.top_headlines.length > 0) return
 
@@ -255,85 +243,59 @@ export default {
           this.loading = false
         })
       })
+      // Network
+      this.fetchFromNetwork()
+      // Streaming
+      this.fetchByStreaming()
     },
     fetchFromNetwork () {
-      if (navigator.onLine) {
-        let newsUrl
-        const token = tokens.newsApiToken()
-        if (this.source.index) {
-          newsUrl = `https://newsapi.org/v2/top-headlines?sources=${this.source.index}&apiKey=${token}`
-        } else {
-          newsUrl = `https://newsapi.org/v2/top-headlines?country=${this.country.index}&apiKey=${token}`
+      if (window.Worker) {
+        const myWorker = new Worker('/static/worker.js')
+        myWorker.postMessage([this.source.index, this.country.index, tokens.newsApiToken()])
+        myWorker.onmessage = (event) => {
+          this.top_headlines = event.data.articles
+          caches.delete('nkatar-news-image').then(() => {
+            // console.log('Image cache deleted')
+          })
+          idb.indexDb().then((db) => {
+            const transaction = db.transaction('nkatar-top-headlines', 'readwrite')
+            const store = transaction.objectStore('nkatar-top-headlines')
+            event.data.articles.forEach((article) => {
+              const url = article.urlToImage
+              // Put in IndexDB
+              store.put(article)
+              // Put in Cache
+              fetch(url, {mode: 'no-cors'})
+                .then((response) => {
+                  caches.open('nkatar-news-image').then((cache) => {
+                    cache.put(url, response)
+                  })
+                })
+                .catch((error) => {
+                  console.log(error)
+                })
+            })
+            // limit store to 20 items
+            store.index('by_date').openCursor(null, 'prev').then(function (cursor) {
+              return cursor.advance(20)
+            }).then(function deleteRest (cursor) {
+              if (!cursor) return
+              cursor.delete()
+              return cursor.continue().then(deleteRest)
+            })
+          })
         }
-        fetch(newsUrl)
-          .then((response) => {
-            return response.json()
-          })
-          .then((data) => {
-            this.top_headlines = data.articles
-            // console.log(data)
-            caches.delete('nkatar-news-image').then(() => {
-              // console.log('Image cache deleted')
-            })
-            idb.indexDb().then((db) => {
-              const transaction = db.transaction('nkatar-top-headlines', 'readwrite')
-              const store = transaction.objectStore('nkatar-top-headlines')
-              data.articles.forEach((article) => {
-                // let newUrl
-                const url = article.urlToImage
-                // if (url && url.substring(0, 5) === 'http:') {
-                //   newUrl = url.replace('http:', 'https:')
-                // } else {
-                //   newUrl = url
-                // }
-                // article.urlToImage = newUrl
-                // Put in IndexDB
-                store.put(article)
-                // Put in Cache
-                fetch(url, {mode: 'no-cors'})
-                  .then((response) => {
-                    // if (!response.ok) {
-                    //   throw Error("Can't fetch image")
-                    // }
-                    caches.open('nkatar-news-image').then((cache) => {
-                      cache.put(url, response)
-                    })
-                  })
-                  .catch((error) => {
-                    console.log(error)
-                  })
-              })
-              // limit store to 20 items
-              store.index('by_date').openCursor(null, 'prev').then(function (cursor) {
-                return cursor.advance(20)
-              }).then(function deleteRest (cursor) {
-                if (!cursor) return
-                cursor.delete()
-                return cursor.continue().then(deleteRest)
-              })
-            })
-              .then(() => {
-                this.loading = false
-                clearInterval(this.interval)
-              })
-            // Streaming
-            this.fetchByStreaming()
-          })
-      } else {
-        this.fetchCachedNews()
-        clearInterval(this.interval)
       }
     }
   },
   mounted () {
-    // this.sendPushNotification('Post message')
-    this.fetchFromNetwork()
     this.interval = setInterval(() => {
       if (this.value === 100) {
         return (this.value = 0)
       }
       this.value += 10
     }, 1000)
+    this.fetchCachedNews()
   }
 }
 </script>
@@ -353,6 +315,7 @@ export default {
   font-size: 1.4em;
   text-align: left;
   height: 180px;
+  align-self: flex-end;
 }
 
 .card-text {
