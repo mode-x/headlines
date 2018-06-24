@@ -65,7 +65,7 @@
       </v-layout>
       <v-dialog v-model="dialog" max-width="500px">
         <v-card>
-          <v-card-title class="white--text" style="background-color: #2196F3;">
+          <v-card-title class="white--text" style="background-color: #607D8B;">
             Delete Favorite
           </v-card-title>
           <v-card-text>
@@ -73,7 +73,7 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="blue" flat @click.stop="dialog=false">Delete</v-btn>
+            <v-btn color="blue" flat @click.stop="dialog=false">Cancel</v-btn>
             <v-btn color="orange" flat @click.stop="deleteFavorite()">Ok</v-btn>
           </v-card-actions>
         </v-card>
@@ -194,7 +194,6 @@ export default {
   font-size: 1em;
   text-align: left;
   align-items: flex-start;
-  color: black;
 }
 
 .card-text {
@@ -213,8 +212,9 @@ export default {
   font-size: 1em;
   text-align: left;
   align-items: flex-start;
-  color: black;
-  height: 100px;
+  height: 95px;
+  border-bottom: solid 1px white;
+  opacity: 0.8;
 }
 
 .truncate {

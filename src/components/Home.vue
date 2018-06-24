@@ -19,9 +19,9 @@
               <img :src=top_headline.urlToImage width="100%" v-if="top_headline.urlToImage" style="max-height: 180px;" onerror="this.src='./static/nkatar_logo.png'" alt="news_image"/>
               <img src='static/nkatar_logo.png' width="100%" v-else style="max-height: 180px;" alt="default_image"/>
             </v-flex>
-            <v-flex xs12 sm6>
+            <v-flex xs12 sm6 class="px-3">
               <v-layout column>
-                <v-flex xs6 class="card-title">
+                <v-flex xs6 class="card-title mt-1">
                   <div class="text-holder">
                     {{ top_headline.title }}
                   </div>
@@ -34,12 +34,12 @@
                 </v-flex>
                 <v-flex xs6 class="action-text mt-1">
                   <v-layout row>
-                    <v-flex xs6 class="action-text text-xs-center" style="cursor: pointer;" @click.stop="initializeFavorite(top_headline)">
+                    <v-flex xs6 class="action-text text-xs-center" style="cursor: pointer;" @click.stop="initializeFavorite(top_headline)" aria-label="home" role="button">
                       <v-icon color="red" size="24">favorite</v-icon>
                       Favorite
                     </v-flex>
                     <v-flex xs6 class="action-text text-xs-center">
-                      <a :href=top_headline.url target="blank">
+                      <a :href=top_headline.url target="blank" :aria-label=index>
                         <v-icon color="blue" dark size="24">laptop_chromebook</v-icon>
                       </a>
                       Read
@@ -76,7 +76,7 @@
       </v-layout>
       <v-dialog v-model="dialog" max-width="500px">
         <v-card>
-          <v-card-title class="white--text" style="background-color: #2196F3;">
+          <v-card-title class="white--text" style="background-color: #607D8B;">
             Add Favorite
           </v-card-title>
           <v-card-text>
@@ -104,6 +104,7 @@
 <script>
 import { StreamDataIo } from 'streamdataio-js-sdk'
 import * as jsonpatch from 'fast-json-patch'
+// import axios from 'axios'
 
 const moment = require('moment')
 const idb = require('../assets/js/idb.js')
@@ -268,8 +269,6 @@ export default {
       this.isConnected = false
     },
     fetchCachedNews () {
-      this.loading = false
-      clearInterval(this.interval)
       // Cache
       idb.indexDb().then((db) => {
         if (this.top_headlines.length > 0) return
@@ -281,6 +280,7 @@ export default {
           this.top_headlines = articles.reverse()
           this.loading = false
         })
+        clearInterval(this.interval)
       })
       // Network
       this.fetchFromNetwork()
@@ -354,7 +354,6 @@ export default {
   font-size: 1em;
   text-align: left;
   align-items: flex-start;
-  color: black;
 }
 
 .card-text {
@@ -373,8 +372,9 @@ export default {
   font-size: 1em;
   text-align: left;
   align-items: flex-start;
-  color: black;
-  height: 100px;
+  height: 95px;
+  border-bottom: solid 1px white;
+  opacity: 0.8;
 }
 
 .truncate {

@@ -5,7 +5,7 @@
         <v-container fluid>
           <v-layout row wrap>
             <v-flex xs12 mt-5>
-              <span text-color="primary">Countries</span>
+              <span>Countries</span>
               <v-select
                 :items="countries"
                 v-model="country"
@@ -17,7 +17,7 @@
               ></v-select>
             </v-flex>
             <v-flex xs12 my-5>
-              <span text-color="primary">Sources</span>
+              <span >Sources</span>
               <v-select
                 :items="sources"
                 v-model="source"
@@ -28,23 +28,28 @@
                 @change="drawer = !drawer"
               ></v-select>
             </v-flex>
-            <v-flex xs12 mt-5>
+            <v-flex xs12>
               <v-layout row wrap>
-                <v-flex xs10 class="pa-2" style="background-color: #2196F3; cursor: pointer;" @click.stop="openFavorites()">
-                  {{ fetchFavorites.length }} Favorite(s)
+                <v-flex xs12>
+                  <v-btn block color="primary" dark @click.stop="openFavorites()" aria-label="open_favotites">
+                    {{ fetchFavorites.length }} Favorite(s)
+                    <v-icon color="red" right>favorite</v-icon>
+                  </v-btn>
                 </v-flex>
-                <v-flex xs2 class="pa-2" style="background-color: #2196F3; cursor: pointer;" @click.stop="openFavorites()">
-                  <v-icon color="red">favorite</v-icon>
+                <v-flex xs12>
+                  <v-btn block color="primary" dark @click.stop="dialog=true" aria-label="enable_push">
+                    <span v-if="push_enabled">Push Notifications Enabled</span>
+                    <span v-else>Enable Push Notifications</span>
+                  </v-btn>
                 </v-flex>
-                <v-flex xs12>Click to view your favorite news</v-flex>
               </v-layout>
             </v-flex>
           </v-layout>
         </v-container>
       </template>
     </v-navigation-drawer>
-    <v-toolbar color="blue" dark fixed app>
-      <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
+    <v-toolbar color="primary" dark fixed app>
+      <v-toolbar-side-icon @click.stop="drawer = !drawer" aria-label="menu"></v-toolbar-side-icon>
       <v-toolbar-title style="margin-left: 3px;">Nkatar</v-toolbar-title>
       <v-spacer></v-spacer>
       <template v-if="by_countries && !showFavorites">
@@ -54,7 +59,7 @@
       <template v-if="by_sources">
         <span class="pr-2">{{ `Source: ${displaySource(selectedSource)}` }}</span>
       </template>
-      <v-btn icon v-if="showFavorites" @click.stop="home()">
+      <v-btn icon v-if="showFavorites" @click.stop="home()" aria-label="home">
         <v-icon>home</v-icon>
       </v-btn>
     </v-toolbar>
@@ -72,12 +77,12 @@
         </v-layout>
       </v-container>
     </v-content>
-    <v-footer color="blue" app>
-      <span class="white--text">&copy; 2017</span>
+    <v-footer color="primary" app>
+      <span class="white--text pl-3">&copy; 2018</span>
     </v-footer>
     <v-dialog v-model="dialog" max-width="500px">
       <v-card>
-        <v-card-title style="background-color: #2196F3; color: white;">
+        <v-card-title class="white--text" style="background-color: #607D8B;">
           Push Notification
         </v-card-title>
         <v-card-text>
@@ -85,14 +90,14 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue" flat @click.stop="dialog=false">Cancel</v-btn>
-          <v-btn color="orange" flat @click.stop="subscribeUser()">Ok</v-btn>
+          <v-btn color="blue" flat @click.stop="dialog=false" aria-label="cancel_push">Cancel</v-btn>
+          <v-btn color="orange" flat @click.stop="subscribeUser()" aria-label="ok_push">Ok</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
     <v-dialog v-model="dialog1" max-width="500px">
       <v-card>
-        <v-card-title style="background-color: #2196F3; color: white;">
+        <v-card-title class="white--text" style="background-color: #607D8B;">
           <span class="text-white">Favorites</span>
         </v-card-title>
         <v-card-text>
@@ -100,7 +105,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue" flat @click.stop="dialog1=false">Cancel</v-btn>
+          <v-btn color="blue" flat @click.stop="dialog1=false" aria-label="cancel_favorite">Cancel</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -112,7 +117,7 @@ const apiCountries = require('./assets/js/api_countries.js')
 const apiSources = require('./assets/js/api_sources.js')
 
 const idb = require('./assets/js/idb.js')
-const tokens = require('./assets/js/tokens.js')
+// const tokens = require('./assets/js/tokens.js')
 
 export default {
   name: 'app',
@@ -129,19 +134,24 @@ export default {
       alert: false,
       alert_message: '',
       dialog: false,
-      dialog1: false
+      dialog1: false,
+      push_enabled: false
     }
   },
   watch: {
     country (index, oldIndex) {
       this.$store.commit('setFetchFromNetwork', oldIndex === null || oldIndex !== null)
       for (const item of apiCountries.list()) {
+        if (this.showFavorites) {
+          this.$router.replace('/')
+        }
         if (item.index === index) {
           this.source = null
           this.by_countries = true
           this.by_sources = false
           const name = item.name.replace(/ /g, '_').toLowerCase()
           this.country_flag = `./static/flags/${name}.gif`
+          this.$store.commit('setShowFavorites', false)
           this.$store.commit('setCountry', {index: index, name: item.name})
           this.$store.commit('setSource', {})
         }
@@ -150,9 +160,13 @@ export default {
     source (index, o) {
       for (const item of apiSources.list()) {
         if (item.index === index) {
+          if (this.showFavorites) {
+            this.$router.replace('/')
+          }
           this.country = null
           this.by_countries = false
           this.by_sources = true
+          this.$store.commit('setShowFavorites', false)
           this.$store.commit('setFetchFromNetwork', false)
           this.$store.commit('setSource', {index: index, source: item.source})
         }
@@ -211,35 +225,37 @@ export default {
       return value.source
     },
     getLocation () {
-      if (navigator.onLine) {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition((position) => {
-            fetch(`https://secure.geonames.org/findNearbyPlaceNameJSON?lat=${position.coords.latitude}&lng=${position.coords.longitude}&username=${tokens.geoNamesUserName()}`)
-              .then((response) => {
-                if (!response) return
-                return response.json()
-              })
-              .then((data) => {
-                const name = data.geonames[0].countryName.replace(/ /g, '_').toLowerCase()
-                const index = data.geonames[0].countryCode.toLowerCase()
-                for (const item of apiCountries.list()) {
-                  if (item.index === index) {
-                    this.country_flag = `./static/flags/${name}.gif`
-                    this.$store.commit('setCountry', {index: index, name: name})
-                  } else {
-                    this.$store.commit('setCountry', {index: 'ng', name: 'Nigeria'})
-                    this.country_flag = './static/flags/nigeria.gif'
-                  }
-                }
-              })
-          })
-        } else {
-          this.$store.commit('setCountry', {index: 'ng', name: 'Nigeria'})
-          this.country_flag = './static/flags/nigeria.gif'
-          this.alert = true
-          this.alert_message = 'Geolocation is not supported by this browser.'
-        }
-      }
+      this.$store.commit('setCountry', {index: 'ng', name: 'Nigeria'})
+      this.country_flag = './static/flags/nigeria.gif'
+      // if (navigator.onLine) {
+      //   if (navigator.geolocation) {
+      //     navigator.geolocation.getCurrentPosition((position) => {
+      //       fetch(`https://secure.geonames.org/findNearbyPlaceNameJSON?lat=${position.coords.latitude}&lng=${position.coords.longitude}&username=${tokens.geoNamesUserName()}`)
+      //         .then((response) => {
+      //           if (!response) return
+      //           return response.json()
+      //         })
+      //         .then((data) => {
+      //           const name = data.geonames[0].countryName.replace(/ /g, '_').toLowerCase()
+      //           const index = data.geonames[0].countryCode.toLowerCase()
+      //           for (const item of apiCountries.list()) {
+      //             if (item.index === index) {
+      //               this.country_flag = `./static/flags/${name}.gif`
+      //               this.$store.commit('setCountry', {index: index, name: name})
+      //             } else {
+      //               this.$store.commit('setCountry', {index: 'ng', name: 'Nigeria'})
+      //               this.country_flag = './static/flags/nigeria.gif'
+      //             }
+      //           }
+      //         })
+      //     })
+      //   } else {
+      //     this.$store.commit('setCountry', {index: 'ng', name: 'Nigeria'})
+      //     this.country_flag = './static/flags/nigeria.gif'
+      //     this.alert = true
+      //     this.alert_message = 'Geolocation is not supported by this browser.'
+      //   }
+      // }
     },
     loadSources () {
       for (const item of apiSources.list()) {
@@ -296,10 +312,11 @@ export default {
         reg.pushManager.getSubscription().then((sub) => {
           if (sub === null) {
             // Update UI to ask user to register for Push
+            this.push_enabled = false
             console.log('Not subscribed to push service!')
-            this.dialog = true
           } else {
             // We have a subscription, update the database
+            this.push_enabled = true
             this.$store.commit('setEndPointUrl', sub.endpoint)
           }
         })

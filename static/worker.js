@@ -1,4 +1,3 @@
-
 onmessage = (e) => {
   if (navigator.onLine) {
     let newsUrl
